@@ -55,20 +55,20 @@ User: "Build a recipe sharing app"
   │
   ▼
 Orchestrator
-  ├─1─► runSubagent(Researcher, project mode)   → .planning/research/*
-  ├─2─► runSubagent(Researcher, synthesize)     → .planning/research/SUMMARY.md
-  ├─3─► runSubagent(Planner, roadmap mode)      → ROADMAP.md, STATE.md, REQUIREMENTS.md
+  ├─1─► runSubagent(Researcher, project mode)
+  ├─2─► runSubagent(Researcher, synthesize)
+  ├─3─► runSubagent(Planner, roadmap mode)
   │
   │  For each phase:
-  ├─4─► runSubagent(Researcher, phase mode)     → .planning/phases/N/RESEARCH.md
-  ├─5─► runSubagent(Planner, plan mode)         → .planning/phases/N/PLAN.md
+  ├─4─► runSubagent(Researcher, phase mode)
+  ├─5─► runSubagent(Planner, plan mode)
   ├─6─► runSubagent(Planner, validate mode)     → pass/fail
   ├─7─► runSubagent(Coder) + runSubagent(Designer) → code + .planning/phases/N/SUMMARY.md
-  ├─8─► runSubagent(Verifier, phase mode)       → .planning/phases/N/VERIFICATION.md
+  ├─8─► runSubagent(Verifier, phase mode)
   │     └── gaps? → runSubagent(Planner, gaps) → runSubagent(Coder) → runSubagent(Verifier)
   │
   │  After all phases:
-  ├─9─► runSubagent(Verifier, integration)      → .planning/INTEGRATION.md
+  ├─9─► runSubagent(Verifier, integration)
   └─10─► Report to user
 ```
 
@@ -80,9 +80,11 @@ Delegate domain research to Researcher in project mode.
 
 **Call the runSubagent tool:** `Researcher`
 - **description:** "Research domain and technology stack"
-- **prompt:** "Project mode. Research the domain, technology options, architecture patterns, and pitfalls for: **[user's request]**. Write all output to `.planning/research/`."
-
-**Wait for:** `.planning/research/STACK.md`, `FEATURES.md`, `ARCHITECTURE.md`, `PITFALLS.md`
+- **Mode:** Project
+- **Objective:** Research the domain, technology options, architecture patterns, and pitfalls for: **[user's request]**
+- **Inputs:** User request
+- **Constraints:** Use source hierarchy (Context7, official docs, web search)
+- **prompt:** "Project mode. Research the domain, technology options, architecture patterns, and pitfalls for: **[user's request]**. Use your standard outputs for this mode."
 
 ### Step 2: Synthesize Research
 
@@ -90,17 +92,21 @@ Consolidate research outputs into a single summary.
 
 **Call the runSubagent tool:** `Researcher`
 - **description:** "Synthesize research findings"
-- **prompt:** "Synthesize mode. Read all files in `.planning/research/` and create a consolidated `.planning/research/SUMMARY.md` with executive summary, recommended stack, and roadmap implications."
-
-**Wait for:** `.planning/research/SUMMARY.md`
+- **Mode:** Synthesize
+- **Objective:** Consolidate research findings into a summary
+- **Inputs:** `.planning/research/` directory contents
+- **Constraints:** Include executive summary, recommended stack, and roadmap implications
+- **prompt:** "Synthesize mode. Read all files in `.planning/research/` and create a consolidated summary with executive summary, recommended stack, and roadmap implications. Use your standard outputs for this mode."
 
 ### Step 3: Create Roadmap
 
 **Call the runSubagent tool:** `Planner`
 - **description:** "Create project roadmap"
-- **prompt:** "Roadmap mode. Using the research in `.planning/research/SUMMARY.md`, create a phased roadmap for: **[user's request]**. Write `ROADMAP.md`, `REQUIREMENTS.md`, and `STATE.md` to `.planning/`."
-
-**Wait for:** `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`, `.planning/STATE.md`
+- **Mode:** Roadmap
+- **Objective:** Create a phased roadmap for: **[user's request]**
+- **Inputs:** `.planning/research/SUMMARY.md`
+- **Constraints:** Include phase breakdown, requirement mapping, and success criteria
+- **prompt:** "Roadmap mode. Using the research in `.planning/research/SUMMARY.md`, create a phased roadmap for: **[user's request]**. Use your standard outputs for this mode."
 
 **Show the user:** Display the roadmap phases and ask for confirmation before proceeding to phase execution.
 
@@ -114,17 +120,21 @@ Read `ROADMAP.md` and execute each phase in order. For each phase N:
 
 **Call the runSubagent tool:** `Researcher`
 - **description:** "Research Phase [N] implementation"
-- **prompt:** "Phase mode. Research implementation details for Phase [N]: '[phase name]'. Read `.planning/ROADMAP.md` for phase goals and `.planning/research/SUMMARY.md` for stack decisions. Write output to `.planning/phases/[N]/RESEARCH.md`."
-
-**Wait for:** `.planning/phases/[N]/RESEARCH.md`
+- **Mode:** Phase
+- **Objective:** Research implementation details for Phase [N]: '[phase name]'
+- **Inputs:** `.planning/ROADMAP.md` (phase goals), `.planning/research/SUMMARY.md` (stack decisions)
+- **Constraints:** Focus on implementation-specific research for this phase
+- **prompt:** "Phase mode. Research implementation details for Phase [N]: '[phase name]'. Read `.planning/ROADMAP.md` for phase goals and `.planning/research/SUMMARY.md` for stack decisions. Use your standard outputs for this mode."
 
 #### Step 5: Create Phase Plan
 
 **Call the runSubagent tool:** `Planner`
 - **description:** "Create Phase [N] plan"
-- **prompt:** "Plan mode. Create task-level plans for Phase [N]. Read `.planning/phases/[N]/RESEARCH.md` for implementation guidance and `.planning/ROADMAP.md` for success criteria. Write plans to `.planning/phases/[N]/PLAN.md`."
-
-**Wait for:** `.planning/phases/[N]/PLAN.md`
+- **Mode:** Plan
+- **Objective:** Create task-level plans for Phase [N]
+- **Inputs:** `.planning/phases/[N]/RESEARCH.md` (implementation guidance), `.planning/ROADMAP.md` (success criteria)
+- **Constraints:** Plans are prompts—ensure each is executable by a single agent in one session
+- **prompt:** "Plan mode. Create task-level plans for Phase [N]. Read `.planning/phases/[N]/RESEARCH.md` for implementation guidance and `.planning/ROADMAP.md` for success criteria. Use your standard outputs for this mode."
 
 #### Step 6: Validate Plan
 
@@ -161,7 +171,11 @@ Parse the PLAN.md for task assignments. Determine parallelization using file ove
 
 **Call the runSubagent tool:** `Verifier`
 - **description:** "Verify Phase [N] implementation"
-- **prompt:** "Phase mode. Verify Phase [N] against success criteria in ROADMAP.md. Test it — verify independently. Write `.planning/phases/[N]/VERIFICATION.md`."
+- **Mode:** Phase
+- **Objective:** Verify Phase [N] against success criteria
+- **Inputs:** Phase directory contents, `ROADMAP.md` (success criteria), `REQUIREMENTS.md`, `STATE.md`
+- **Constraints:** Test independently—task completion ≠ goal achievement
+- **prompt:** "Phase mode. Verify Phase [N] against success criteria in ROADMAP.md. Test it — verify independently. Use your standard outputs for this mode."
 
 **If PASSED →** Report phase completion to user. Advance to next phase (back to Step 4).
 **If GAPS_FOUND →** Enter gap-closure loop:
@@ -178,7 +192,11 @@ Parse the PLAN.md for task assignments. Determine parallelization using file ove
 
 **Call the runSubagent tool:** `Planner`
 - **description:** "Create gap-closure plan for Phase [N]"
-- **prompt:** "Gaps mode. Read `.planning/phases/[N]/VERIFICATION.md` and create fix plans for the gaps found. Write fix plans to `.planning/phases/[N]/`."
+- **Mode:** Gaps
+- **Objective:** Create fix plans for verification gaps
+- **Inputs:** `.planning/phases/[N]/VERIFICATION.md` (gaps found)
+- **Constraints:** Focus on closing specific gaps identified in verification
+- **prompt:** "Gaps mode. Read `.planning/phases/[N]/VERIFICATION.md` and create fix plans for the gaps found. Use your standard outputs for this mode."
 
 **Call the runSubagent tool:** `Coder`
 - **description:** "Execute gap-closure for Phase [N]"
@@ -200,7 +218,11 @@ After ALL phases are complete:
 
 **Call the runSubagent tool:** `Verifier`
 - **description:** "Verify cross-phase integration"
-- **prompt:** "Integration mode. Verify cross-phase wiring and end-to-end flows. Read all phase summaries and check that exports are consumed, APIs are called, auth is applied, and user flows work end-to-end. Write `.planning/INTEGRATION.md`."
+- **Mode:** Integration
+- **Objective:** Verify cross-phase wiring and end-to-end flows
+- **Inputs:** All phase summaries, phase directory contents
+- **Constraints:** Check exports are consumed, APIs are called, auth is applied, and user flows work end-to-end
+- **prompt:** "Integration mode. Verify cross-phase wiring and end-to-end flows. Read all phase summaries and check that exports are consumed, APIs are called, auth is applied, and user flows work end-to-end. Use your standard outputs for this mode."
 
 **If issues found →** Route back through gap-closure: runSubagent(Planner, gaps mode) → runSubagent(Coder) → runSubagent(Verifier) for the specific cross-phase issues.
 
@@ -326,19 +348,17 @@ When resuming, read `STATE.md` to determine current position and pick up from th
 
 **Call runSubagent:** `Researcher`
 - **description:** "Research recipe sharing app domain"
-- **prompt:** "Project mode. Research the domain of recipe sharing applications — tech stack options, architecture patterns, features, and common pitfalls."
-
-*Wait for research files...*
+- **prompt:** "Project mode. Research the domain of recipe sharing applications — tech stack options, architecture patterns, features, and common pitfalls. Use your standard outputs for this mode."
 
 **Call runSubagent:** `Researcher`
 - **description:** "Synthesize research"
-- **prompt:** "Synthesize mode. Consolidate all research into `.planning/research/SUMMARY.md`."
+- **prompt:** "Synthesize mode. Consolidate all research into a summary with executive summary, recommended stack, and roadmap implications. Use your standard outputs for this mode."
 
 ### Step 3: Roadmap
 
 **Call runSubagent:** `Planner`
 - **description:** "Create recipe app roadmap"
-- **prompt:** "Roadmap mode. Create a phased roadmap for a recipe sharing app using the research in `.planning/research/SUMMARY.md`."
+- **prompt:** "Roadmap mode. Create a phased roadmap for a recipe sharing app using the research in `.planning/research/SUMMARY.md`. Use your standard outputs for this mode."
 
 **Show user the roadmap. Wait for approval.**
 
@@ -346,11 +366,11 @@ When resuming, read `STATE.md` to determine current position and pick up from th
 
 **Call runSubagent:** `Researcher`
 - **description:** "Research Phase 1 implementation"
-- **prompt:** "Phase mode. Research implementation details for Phase 1."
+- **prompt:** "Phase mode. Research implementation details for Phase 1. Use your standard outputs for this mode."
 
 **Call runSubagent:** `Planner`
 - **description:** "Create Phase 1 plan"
-- **prompt:** "Plan mode. Create task plans for Phase 1."
+- **prompt:** "Plan mode. Create task plans for Phase 1. Use your standard outputs for this mode."
 
 **Call runSubagent:** `Planner`
 - **description:** "Validate Phase 1 plan"
@@ -362,7 +382,7 @@ When resuming, read `STATE.md` to determine current position and pick up from th
 
 **Call runSubagent:** `Verifier`
 - **description:** "Verify Phase 1"
-- **prompt:** "Phase mode. Verify Phase 1 implementation."
+- **prompt:** "Phase mode. Verify Phase 1 implementation. Use your standard outputs for this mode."
 
 *If gaps → gap-closure loop → then continue...*
 
@@ -374,7 +394,7 @@ When resuming, read `STATE.md` to determine current position and pick up from th
 
 **Call runSubagent:** `Verifier`
 - **description:** "Verify integration"
-- **prompt:** "Integration mode. Verify cross-phase wiring and end-to-end flows."
+- **prompt:** "Integration mode. Verify cross-phase wiring and end-to-end flows. Use your standard outputs for this mode."
 
 ### Step 10: Report
 
