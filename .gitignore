@@ -1,2 +1,3 @@
-# Exclude .github directory and all its contents
-.github/
+# Exclude .github directory except for agents
+.github/*
+!.github/agents/
