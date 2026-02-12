@@ -20,7 +20,7 @@ You MUST delegate to subagents using the `runSubagent` tool. These agents have f
 | Verifier | `Verifier` | Yes | Goal-backward verification, integration checks |
 | Debugger | `Debugger` | Yes | Scientific debugging with hypothesis testing |
 
-**You MUST use runSubagent to invoke workspace agents.** The workspace agents are configured with `edit`, `execute`, `search`, `context7`, and other tools. Use the exact agent name (lowercase) from the table above when calling runSubagent.
+**You MUST use runSubagent to invoke workspace agents.** The workspace agents are configured with `edit`, `execute`, `search`, `context7`, and other tools. Use the exact agent name (capitalized) from the table above when calling runSubagent.
 
 ### Path References in Delegation
 
@@ -126,8 +126,6 @@ Read `ROADMAP.md` and execute each phase in order. For each phase N:
 
 **Wait for:** `.planning/phases/[N]/PLAN.md`
 
-**Wait for:** `.planning/phases/[N]/PLAN.md`
-
 #### Step 6: Validate Plan
 
 **Call the runSubagent tool:** `Planner`
@@ -157,7 +155,13 @@ Parse the PLAN.md for task assignments. Determine parallelization using file ove
 
 **Parallel execution:** If tasks touch different files and have no dependencies, call runSubagent for Coder and Designer simultaneously with explicit file scoping (see File Conflict Prevention below).
 
-**Wait for:** All tasks complete + `.planning/phases/[N]/SUMMARY.md`st it — verify independently. Write `.planning/phases/[N]/VERIFICATION.md`."
+**Wait for:** All tasks complete + `.planning/phases/[N]/SUMMARY.md`
+
+#### Step 8: Verify Phase
+
+**Call the runSubagent tool:** `Verifier`
+- **description:** "Verify Phase [N] implementation"
+- **prompt:** "Phase mode. Verify Phase [N] against success criteria in ROADMAP.md. Test it — verify independently. Write `.planning/phases/[N]/VERIFICATION.md`."
 
 **If PASSED →** Report phase completion to user. Advance to next phase (back to Step 4).
 **If GAPS_FOUND →** Enter gap-closure loop:
@@ -183,12 +187,6 @@ Parse the PLAN.md for task assignments. Determine parallelization using file ove
 **Call the runSubagent tool:** `Verifier`
 - **description:** "Re-verify Phase [N]"
 - **prompt:** "Re-verify Phase [N]. Focus on previously-failed items from `VERIFICATION.md`."
-5. Still failing?      → report to user with remaining gaps
-```
-
-**Call the runSubagent tool:** `Verifier`
-- **description:** "Re-verify Phase [N]"
-- **prompt:** "Re-verify Phase [N]. Focus on previously-failed items from `VERIFICATION.md`."
 
 **If HUMAN_NEEDED →** Report to user what needs manual verification before continuing.
 
@@ -206,8 +204,6 @@ After ALL phases are complete:
 
 **If issues found →** Route back through gap-closure: runSubagent(Planner, gaps mode) → runSubagent(Coder) → runSubagent(Verifier) for the specific cross-phase issues.
 
-**If issues found →** Route back through gap-closure: runSubagent(Planner, gaps mode) → runSubagent(Coder) → runSubagent(Verifier) for the specific cross-phase issues.
-
 #### Step 10: Report to User
 
 Compile final report:
@@ -221,9 +217,9 @@ Compile final report:
 ---
 
 ## Parallelization Rules
-runSubagent(coder, "Implement the theme context. Create src/contexts/ThemeContext.tsx and src/hooks/useTheme.ts. Do NOT touch any other files.")
 
-runSubagent(coder, "Create the toggle component in src/components/ThemeToggle.tsx. Do NOT touch any other files.")
+**RUN IN PARALLEL when:**
+- Tasks touch completely different files
 - Tasks are in different domains (e.g., styling vs. logic)
 - Tasks have no data dependencies
 
